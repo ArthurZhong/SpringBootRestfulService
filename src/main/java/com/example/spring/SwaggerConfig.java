@@ -23,13 +23,14 @@ public class SwaggerConfig {
     public SwaggerSpringMvcPlugin customImplementation() {
         return new SwaggerSpringMvcPlugin(this.springSwaggerConfig).apiInfo(apiInfo()).includePatterns(
                 "/greeting/.*",
-                "/mp/.*"
+                "/.*"
         );
     }
 
     private ApiInfo apiInfo() {
         ApiInfo apiInfo = new ApiInfo(
-                "Hello world", "Spring Boot Restful Service", "", "", "", ""
+                "Hello world", "Spring Boot Restful Service API", "terms of service",
+                "abc@gmail.com", "Licence Type", "License URL"
                 );
         return apiInfo;
     }
