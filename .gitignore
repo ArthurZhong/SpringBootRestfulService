@@ -10,3 +10,24 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+#Directories
+target/
+logs/
+*.settings/
+build/
+.gradle
+
+# Files
+*.pyc
+*.classpath
+*.project
+*.pydevproject
+.DS_Store
+*.swp
+*.log
+
+# intellij
+.idea/
+*.iml
+*.iws
