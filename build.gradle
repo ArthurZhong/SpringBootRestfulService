@@ -2,17 +2,10 @@ buildscript {
     repositories {
         maven { url "https://repo.spring.io/libs-release" }
         mavenLocal()
-        jcenter()
         mavenCentral()
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.1.10.RELEASE")
-        classpath("org.springframework.boot:spring-boot-starter-security:1.1.10.RELEASE")
-        classpath("com.ryantenney.metrics:metrics-spring:3.0.4")
-        classpath("org.codehaus.jackson:jackson-mapper-asl:1.9.13")
-        classpath("org.codehaus.jackson:jackson-core-asl:1.9.13")
-        classpath("com.h2database:h2:1.3.156")
-        classpath("com.mangofactory:swagger-springmvc:0.9.4")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.1.RELEASE")
     }
 }
 apply plugin: 'java'
@@ -41,7 +34,7 @@ dependencies {
 	//include in compile only, exclude in the war
 	compile("org.springframework.boot:spring-boot-starter-web")
     compile("org.springframework.boot:spring-boot-starter-actuator")
-    compile("org.springframework.boot:spring-boot-starter-security:1.1.10.RELEASE")
+    compile("org.springframework.boot:spring-boot-starter-security")
     compile("com.ryantenney.metrics:metrics-spring:3.0.4")
     compile("org.codehaus.jackson:jackson-mapper-asl:1.9.13")
     compile("org.codehaus.jackson:jackson-core-asl:1.9.13")
