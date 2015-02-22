@@ -39,6 +39,15 @@ public class HelloWorldController implements ServletContextInitializer {
                 String.format(template, name));
     }
 
+    @RequestMapping(value = "/sayhello", method = RequestMethod.GET, produces = "application/json")
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Timed
+    public Greeting sayHello(@RequestParam(value="name", defaultValue="World") String name) {
+        return new Greeting(counter.incrementAndGet(),
+                String.format(template, name));
+    }
+
     @Override
     public void onStartup(ServletContext servletContext) throws ServletException {
         //System.out.println(test)
