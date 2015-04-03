@@ -23,10 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ErrorControllerHealthIndicator extends BasicErrorController implements HealthIndicator {
     final static Logger logger = Logger.getLogger(ErrorControllerHealthIndicator.class);
 
-    @Value("${app.error.up.threshold:100}")
+    @Value("${example.error.up.threshold:100}")
     private int upThreshold;
 
-    @Value("${app.error.unknown.threshold:1000}")
+    @Value("${example.error.unknown.threshold:1000}")
     private int unknownThreshold;
 
     private final Map<String, Map<String, Integer>> statusToPathCounts = Maps.newConcurrentMap();

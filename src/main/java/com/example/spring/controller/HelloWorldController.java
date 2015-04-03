@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.embedded.ServletContextInitializer;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class HelloWorldController implements ServletContextInitializer {
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
 
-    @Value("${app.test.url}")
+    @Value("${example.test.url}")
     private String testUrl;
 
     @RequestMapping(value = "/greeting", method = RequestMethod.GET, produces = "application/json")
@@ -46,6 +47,11 @@ public class HelloWorldController implements ServletContextInitializer {
     public Greeting sayHello(@RequestParam(value="name", defaultValue="World") String name) {
         return new Greeting(counter.incrementAndGet(),
                 String.format(template, name));
+    }
+
+    @Scheduled(cron = "${example.test.cron}")
+    public void cronJob() {
+        System.out.println("say hello!");
     }
 
     @Override
