@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 import org.springframework.boot.test.OutputCapture;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.WebIntegrationTest;
+import org.springframework.boot.test.IntegrationTest;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,6 +31,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = WebAppInitializer.class)
 @WebIntegrationTest
+@IntegrationTest({
+        "example.test.url:http://testurl5"
+})
 public class HelloWorldControllerAspectTest {
     @Autowired
     HelloWorldController helloWorldController;
