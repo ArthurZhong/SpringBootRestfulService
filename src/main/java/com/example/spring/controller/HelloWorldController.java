@@ -49,6 +49,14 @@ public class HelloWorldController implements ServletContextInitializer {
                 String.format(template, name));
     }
 
+    @RequestMapping(value = "/format", method = RequestMethod.GET, produces = "application/json")
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Timed
+    public String format(@RequestParam(value="name", defaultValue="World") String name) {
+        return name;
+    }
+
     @Scheduled(cron = "${example.test.cron}")
     public void cronJob() {
         System.out.println("say hello!");
