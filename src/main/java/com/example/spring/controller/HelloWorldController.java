@@ -1,6 +1,8 @@
 package com.example.spring.controller;
 
 import com.example.spring.model.Greeting;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,8 @@ import com.codahale.metrics.annotation.Timed;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.net.URL;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -26,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class HelloWorldController implements ServletContextInitializer {
     private static final String template = "Hello, %s!";
     private final AtomicLong counter = new AtomicLong();
+    final static Logger logger = Logger.getLogger(HelloWorldController.class);
 
     @Value("${example.test.url}")
     private String testUrl;
@@ -65,5 +70,20 @@ public class HelloWorldController implements ServletContextInitializer {
     @Override
     public void onStartup(ServletContext servletContext) throws ServletException {
         //System.out.println(test)
+    }
+
+    String getFirstLineFromUrl(String testUrl) {
+        try {
+            URL url = new URL(testUrl);
+            List<String> lines = IOUtils.readLines(url.openStream());
+            String firstLine = lines.get(0).toString();
+            if (firstLine != null) {
+                logger.info("New first line: " + firstLine + " from " + testUrl);
+                return firstLine;
+            }
+        } catch (Exception logged) {
+            logger.warn("Failed to get first line from " + testUrl, logged);
+        }
+        return null;
     }
 }

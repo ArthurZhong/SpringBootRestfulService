@@ -1,6 +1,7 @@
 package com.example.spring.controller;
 
 import com.example.spring.model.People;
+import com.example.spring.utils.DataExpectedBuilder;
 import org.apache.commons.math3.stat.Frequency;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.AfterClass;
@@ -20,6 +21,9 @@ import org.springframework.boot.test.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestContextManager;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
+
 /**
  * Created by benbendaisy on 6/30/15.
  */
@@ -34,12 +38,20 @@ public class HelloWorldE2ETest {
     private static TestContextManager testContextManager;
     private static HelloWorldE2ETest instant;
 
+    private final String expectedJson, line;
+
+    public HelloWorldE2ETest(String expectedJson, String line) {
+        this.expectedJson = expectedJson;
+        this.line = line;
+    }
+
+
     @BeforeClass
     public static void init() throws IOException {
         InputStream resource = null;
         try {
             testContextManager = new TestContextManager(HelloWorldE2ETest.class);
-            instant = new HelloWorldE2ETest();
+            instant = new HelloWorldE2ETest("", "");
 
             // this starts the server and binds fields with @Value annotation
             testContextManager.prepareTestInstance(instant);
@@ -87,9 +99,39 @@ public class HelloWorldE2ETest {
 
     @Test
     public void testHelloWorld() {
+        DataExpectedBuilder expectedDataBuilder = DataExpectedBuilder.newBuilder().from(expectedJson);
+        assumeTrue(!blackList.contains(expectedDataBuilder.getPeopleId()));
+        String whiteListedPeopleId = null;
+        if (null != whiteList && !whiteList.isEmpty()) {
+            assumeTrue(whiteList.contains(expectedDataBuilder.getPeopleId()));
+            whiteListedPeopleId = expectedDataBuilder.getPeopleId();
+        }
+
         final TestRestTemplate testRestTemplate = new TestRestTemplate();
         ResponseEntity<? extends String> responseEntity = testRestTemplate.postForEntity(instant.url + "/format", people.getName(), String.class);
         String stringRes = responseEntity.getBody();
+        DataExpectedBuilder actualDataBuilder = DataExpectedBuilder.newBuilder().from(stringRes);
+
+        accumulateStats(actualDataBuilder.getRawData(), fieldStats);
+
+        if (null != whiteListedPeopleId) {
+            System.out.println("nothing need to be verified");
+        }
+
+        int compareCode = actualDataBuilder.compareTo(expectedDataBuilder);
+        if (compareCode > 0) {
+            System.out.println("People has more fields than expected for " + expectedDataBuilder.getPeopleId() + ": " + expectedDataBuilder.diff(actualDataBuilder).getRawData());
+            return;
+        } else if (compareCode < 0) {
+            if (diffOnlyByBlackListedFields(actualDataBuilder, expectedDataBuilder)) {
+                System.out.println(expectedDataBuilder.getPeopleId() + " test assertion ignored for blacklisted fields: " + expectedDataBuilder.diff(actualDataBuilder).getRawData());
+                System.out.println();
+                return;
+            }
+        }
+        assertEquals(expectedDataBuilder.getPeopleId() + ": " + expectedDataBuilder.diff(actualDataBuilder).getRawData(),
+                expectedDataBuilder.getRawData(), actualDataBuilder.getRawData());
+
     }
 
     @Parameterized.Parameters
@@ -116,5 +158,44 @@ public class HelloWorldE2ETest {
             e.printStackTrace();
         }
         return dataToBeReturned;
+    }
+
+    private void accumulateStats(Map<String, List<String>> data, Map<String, Frequency> stats) {
+        for (Map.Entry<String, List<String>> entry : data.entrySet()) {
+            Frequency frequency = stats.get(entry.getKey());
+            if (null == frequency) {
+                frequency = new Frequency();
+                stats.put(entry.getKey(), frequency);
+            }
+
+            for (String value : entry.getValue()) {
+                frequency.addValue(value);
+            }
+        }
+    }
+
+    private boolean diffOnlyByBlackListedFields(DataExpectedBuilder actualDataBuilder, DataExpectedBuilder expectedDataBuilder) {
+        DataExpectedBuilder diffDataBuilder = expectedDataBuilder.diff(actualDataBuilder);
+        for (String key : diffDataBuilder.getRawData().keySet()) {
+            if (key.startsWith("+>")) {
+                continue;
+            } else if (key.startsWith("-<")) {
+                key = key.substring(2);
+            } else {
+                boolean allNew = true;
+                for (String value : diffDataBuilder.getRawData().get(key)) {
+                    if (!value.startsWith("+>")) {
+                        allNew = false;
+                    }
+                }
+                if (allNew) {
+                    continue;
+                }
+            }
+            if (!blackListedFields.contains(key)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
