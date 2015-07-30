@@ -21,7 +21,7 @@ public class People {
     private String address;
     @JsonProperty("state")
     private String state;
-    @JsonProperty("zip_code")
+    @JsonProperty("zipCode")
     private String zipCode;
 
     public String getName() {

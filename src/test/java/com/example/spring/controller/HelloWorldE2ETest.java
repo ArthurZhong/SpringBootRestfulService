@@ -1,5 +1,6 @@
 package com.example.spring.controller;
 
+import com.example.spring.WebAppInitializer;
 import com.example.spring.model.People;
 import com.example.spring.utils.DataExpectedBuilder;
 import org.apache.commons.math3.stat.Frequency;
@@ -9,6 +10,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.Parameter;
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -17,9 +20,12 @@ import java.util.*;
 
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.IntegrationTest;
+import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestContextManager;
+import org.springframework.test.context.web.WebAppConfiguration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
@@ -28,35 +34,34 @@ import static org.junit.Assume.assumeTrue;
  * Created by benbendaisy on 6/30/15.
  */
 @RunWith(Parameterized.class)
+@SpringApplicationConfiguration(classes = WebAppInitializer.class)
+@WebAppConfiguration
+@IntegrationTest({
+        "spring.profiles.active:test"
+})
 public class HelloWorldE2ETest {
     private static final List<String> blackList = Arrays.asList();
     private static final List<String> whiteList = Arrays.asList();
     private static final List<String> blackListedFields = Arrays.asList();
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static Map<String, Frequency> fieldStats = new TreeMap<String, Frequency>();
+    private static People expectedPeople;
+
 
     private static TestContextManager testContextManager;
     private static HelloWorldE2ETest instant;
-
-    private final String expectedJson, line;
-
-    public HelloWorldE2ETest(String expectedJson, String line) {
-        this.expectedJson = expectedJson;
-        this.line = line;
-    }
-
 
     @BeforeClass
     public static void init() throws IOException {
         InputStream resource = null;
         try {
             testContextManager = new TestContextManager(HelloWorldE2ETest.class);
-            instant = new HelloWorldE2ETest("", "");
-
+            resource = HelloWorldE2ETest.class.getClassLoader().getResourceAsStream("sampleData/peopleSample.json");
+            expectedPeople = objectMapper.readValue(resource, People.class);
+            instant = new HelloWorldE2ETest();
             // this starts the server and binds fields with @Value annotation
             testContextManager.prepareTestInstance(instant);
-            resource = HelloWorldE2ETest.class.getClassLoader().getResourceAsStream("sampleData/peopleSample.json");
-            People people = objectMapper.readValue(resource, People.class);
+            System.out.println(instant.url);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -91,15 +96,41 @@ public class HelloWorldE2ETest {
         }
     }
 
-    @Parameterized.Parameter
-    public People people;
-
-    @Value("http://localhost:${local.service.port}")
+    @Value("http://localhost:${local.server.port}")
     private String url;
 
+    @Parameter
+    public People people;
+
+    @Parameters
+    public static Collection<Object[]> peopleData() throws IOException {
+        List<Object[]> dataToBeReturned = new ArrayList<Object[]>();
+        try {
+            URL inputJsonDir = HelloWorldE2ETest.class.getResource("/sampleData");
+            if (inputJsonDir == null) {
+                System.out.println("Input json directory does not exist.");
+                System.exit(1);
+            }
+            File[] inputJsonFiles = new File(inputJsonDir.toURI()).listFiles();
+            System.out.println("Creating test suite ...");
+            for (File jsonFile : inputJsonFiles) {
+                try{
+                    BufferedReader br = new BufferedReader(new FileReader(jsonFile.getAbsolutePath()));
+                    People tp = objectMapper.readValue(br, People.class);
+                    dataToBeReturned.add(new Object[] { tp });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return dataToBeReturned;
+    }
+
     @Test
-    public void testHelloWorld() {
-        DataExpectedBuilder expectedDataBuilder = DataExpectedBuilder.newBuilder().from(expectedJson);
+    public void testHelloWorld() throws Exception {
+        DataExpectedBuilder expectedDataBuilder = DataExpectedBuilder.newBuilder().from(people);
         assumeTrue(!blackList.contains(expectedDataBuilder.getPeopleId()));
         String whiteListedPeopleId = null;
         if (null != whiteList && !whiteList.isEmpty()) {
@@ -108,9 +139,9 @@ public class HelloWorldE2ETest {
         }
 
         final TestRestTemplate testRestTemplate = new TestRestTemplate();
-        ResponseEntity<? extends String> responseEntity = testRestTemplate.postForEntity(instant.url + "/format", people.getName(), String.class);
-        String stringRes = responseEntity.getBody();
-        DataExpectedBuilder actualDataBuilder = DataExpectedBuilder.newBuilder().from(stringRes);
+        ResponseEntity<People> responseEntity = testRestTemplate.postForEntity(instant.url + "/format", people, People.class);
+        People newPeople = responseEntity.getBody();
+        DataExpectedBuilder actualDataBuilder = DataExpectedBuilder.newBuilder().from(newPeople);
 
         accumulateStats(actualDataBuilder.getRawData(), fieldStats);
 
@@ -131,33 +162,6 @@ public class HelloWorldE2ETest {
         }
         assertEquals(expectedDataBuilder.getPeopleId() + ": " + expectedDataBuilder.diff(actualDataBuilder).getRawData(),
                 expectedDataBuilder.getRawData(), actualDataBuilder.getRawData());
-
-    }
-
-    @Parameterized.Parameters
-    private static List<Object[]> data() throws IOException {
-        List<Object[]> dataToBeReturned = new ArrayList<Object[]>();
-        try {
-            URL inputJsonDir = HelloWorldE2ETest.class.getResource("/sampleData");
-            if (inputJsonDir == null) {
-                System.out.println("Input json directory does not exist.");
-                System.exit(1);
-            }
-            File[] inputJsonFiles = new File(inputJsonDir.toURI()).listFiles();
-            System.out.println("Creating test suite ...");
-            for (File jsonFile : inputJsonFiles) {
-                try{
-                    BufferedReader br = new BufferedReader(new FileReader(jsonFile.getAbsolutePath()));
-                    People people = objectMapper.readValue(br, People.class);
-                    dataToBeReturned.add(new Object[] { people });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-        return dataToBeReturned;
     }
 
     private void accumulateStats(Map<String, List<String>> data, Map<String, Frequency> stats) {

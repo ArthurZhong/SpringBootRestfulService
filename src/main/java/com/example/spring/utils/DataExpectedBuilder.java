@@ -1,5 +1,7 @@
 package com.example.spring.utils;
 
+import com.example.spring.model.People;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.collections.CollectionUtils;
@@ -21,12 +23,24 @@ public class DataExpectedBuilder implements Comparable<DataExpectedBuilder> {
         return new DataExpectedBuilder();
     }
 
-    public DataExpectedBuilder from(String line) {
-        String[] fields = TAB.split(line);
-        peopleId = fields[0];
-        for (int i = 1; i < fields.length; i++) {
-            nameValuePair(fields[i]);
-        }
+//    public DataExpectedBuilder from(String line) {
+//        String[] fields = TAB.split(line);
+//        peopleId = fields[0];
+//        for (int i = 1; i < fields.length; i++) {
+//            nameValuePair(fields[i]);
+//        }
+//        return this.sort();
+//    }
+
+    public DataExpectedBuilder from(People people) {
+        peopleId = people.getId();
+        if (!Strings.isNullOrEmpty(people.getId())) nameValuePair("id", people.getId());
+        if (!Strings.isNullOrEmpty(people.getName())) nameValuePair("name", people.getName());
+        if (!Strings.isNullOrEmpty(people.getAddress())) nameValuePair("address", people.getAddress());
+        if (!Strings.isNullOrEmpty(people.getState())) nameValuePair("state", people.getState());
+        if (!Strings.isNullOrEmpty(people.getZipCode())) nameValuePair("zipCode", people.getZipCode());
+
+//        nameValuePair(people.getZipCode());
         return this.sort();
     }
 

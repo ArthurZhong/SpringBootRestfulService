@@ -1,6 +1,7 @@
 package com.example.spring.controller;
 
 import com.example.spring.model.Greeting;
+import com.example.spring.model.People;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonParseException;
@@ -54,12 +55,10 @@ public class HelloWorldController implements ServletContextInitializer {
                 String.format(template, name));
     }
 
-    @RequestMapping(value = "/format", method = RequestMethod.GET, produces = "application/json")
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
+    @RequestMapping(value = "/format", method = RequestMethod.POST)
     @Timed
-    public String format(@RequestParam(value="name", defaultValue="World") String name) {
-        return name;
+    public @ResponseBody People format(@RequestBody final People people) {
+        return people;
     }
 
     @Scheduled(cron = "${example.test.cron}")
